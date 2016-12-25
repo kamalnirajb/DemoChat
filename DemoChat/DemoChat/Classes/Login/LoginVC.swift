@@ -22,7 +22,9 @@ class LoginVC: ParentVC, UITextFieldDelegate {
         }
         
         constant.sh.socket.on("logged in") { (data, ack) in
-            constant.sh.allUsers = data[0] as! [String]
+            
+            constant.sh.socket.off("logged in")
+            constant.sh.allUsers = (data[0] as! [String]).filter{$0 != self.txtUsername.text}
             print(constant.sh.allUsers)
             self.performSegue(withIdentifier: "login_segue", sender: self)
         }

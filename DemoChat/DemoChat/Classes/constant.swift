@@ -11,6 +11,6 @@ import SocketIO
 
 class constant: NSObject {
     static let sh = constant()
-    let socket = SocketIOClient(socketURL: URL(string: "http://192.168.1.102:3000")!, config: [.log(true), .forcePolling(true)])
+    let socket = SocketIOClient(socketURL: URL(string: "http://192.168.1.108:3000")!, config: [.log(true), .forcePolling(true)])
     var allUsers:[String] = []
 }

@@ -29,7 +29,7 @@ class HomeVC: ParentVC, UICollectionViewDelegate, UICollectionViewDataSource, UI
     @IBOutlet weak var btnGotoTop: UIButton!
     @IBOutlet weak var cvMessages: UICollectionView!
     
-    var messages:[Dictionary<String, String>] = []
+    var messages:[Dictionary<String, AnyObject>] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,11 +39,17 @@ class HomeVC: ParentVC, UICollectionViewDelegate, UICollectionViewDataSource, UI
         
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillBeHidden), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
         constant.sh.socket.on("message") { (data, ack) in
-            if let mb = data[0] as? Dictionary<String, String> {
+            if let mb = data[0] as? Dictionary<String, AnyObject> {
                 self.messages.append(mb)
                 self.cvMessages.reloadData()
             }
         }
+        
+        constant.sh.socket.on("logged in") { (data, ack) in
+            constant.sh.allUsers = (data[0] as! [String]).filter{$0 != self.navigationItem.title!}
+            print(constant.sh.allUsers)
+        }
+
     }
     
     
@@ -64,15 +70,15 @@ class HomeVC: ParentVC, UICollectionViewDelegate, UICollectionViewDataSource, UI
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        let cellDictionary:[String:String] = (messages[indexPath.row])
+        let cellDictionary:[String:AnyObject] = (messages[indexPath.row])
         
-        if self.navigationItem.title?.caseInsensitiveCompare(cellDictionary["sourceUser"]!) == .orderedSame  {
+        if self.navigationItem.title?.caseInsensitiveCompare(cellDictionary["sourceUser"]! as! String) == .orderedSame  {
             let cell:ReceivedMessageCell = collectionView.dequeueReusableCell(withReuseIdentifier: "chat_receive", for: indexPath) as! ReceivedMessageCell
-            cell.lblMessage.text = cellDictionary["messageBody"]!
+            cell.lblMessage.text = cellDictionary["messageBody"]! as? String
             return cell
         }
         let cell:SendMessageCell = collectionView.dequeueReusableCell(withReuseIdentifier: "chat_send", for: indexPath) as! SendMessageCell
-        cell.lblMessage.text = cellDictionary["messageBody"]!
+        cell.lblMessage.text = cellDictionary["messageBody"]! as? String
         return cell
     }
     
@@ -138,15 +144,7 @@ class HomeVC: ParentVC, UICollectionViewDelegate, UICollectionViewDataSource, UI
     
     @IBAction func btnSendClicked(_ sender: Any) {
         txtMessage.resignFirstResponder()
-        for user in constant.sh.allUsers {
-            if user.caseInsensitiveCompare(self.navigationItem.title!) == .orderedSame {
-                 // Do nothing
-            }else {
-                constant.sh.socket.emit("message", ["messageBody" : txtMessage.text!, "sourceUser": "\(self.navigationItem.title!)", "destinationUser" : "\(user)"])
-            }
-        }
-        
-        
+        constant.sh.socket.emit("message", ["messageBody" : txtMessage.text!, "sourceUser": "\(self.navigationItem.title!)", "destinationUser" : constant.sh.allUsers])
     }
 }
 
